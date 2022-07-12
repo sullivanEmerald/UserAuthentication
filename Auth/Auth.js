@@ -10,15 +10,16 @@ exports.register = async (req, res, next) => {
     }
 
     try{
+        bcrypt.hash(password,10).then(async (hash) =>
         await User.create({
             username,
-            password,
+            password : hash,
         }).then(user => 
             res.status(200).json({
                 message : "user is successfully created",
                 user,
              })
-        )
+        ))
     }catch(err){
         res.status(401).json({
             message: "user creation not succesful",
@@ -35,18 +36,22 @@ exports.login =  async (req, res , next) => {
             })
         }
         try{
-            const user =  await User.findOne({username, password})
+            const user =  await User.findOne({username})
             if(!user){
                 res.status(401).json({
                     message : " login is unsuccessful",
                     error : "user not found"
                 })
             }else{
-                res.status(200).json({
+                bcrypt.compare(password, user.password).then(function(result){
+                result ?  res.status(200).json({
                     messaage : " login successful",
                     user,
                 })
-            }
+
+                : res.status(400).json({messaage : "Bad Password"})
+            })
+        }
         }catch{
             res.status(400).json({
                 message : "An error happened I dunno",
